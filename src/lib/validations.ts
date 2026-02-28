@@ -28,6 +28,7 @@ export type LoginFormData = z.infer<typeof loginSchema>;
 export const productSchema = z.object({
   id: z.string(),
   name: z.string(),
+  description: z.string().optional(),
   price: z.number(),
   category: z.string(),
   image: z.string().optional(),
@@ -35,6 +36,10 @@ export const productSchema = z.object({
 });
 
 export type Product = z.infer<typeof productSchema>;
+
+export const createProductSchema = productSchema.omit({ id: true });
+
+export type CreateProductFormData = z.infer<typeof createProductSchema>;
 
 export const cartItemSchema = z.object({
   product: productSchema,

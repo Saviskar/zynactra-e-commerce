@@ -1,6 +1,6 @@
 import { Product } from "./validations";
 
-const MOCK_PRODUCTS: Product[] = [
+let MOCK_PRODUCTS: Product[] = [
     { id: "1", name: "Classic White T-Shirt", price: 29.99, category: "Apparel", stock: 10, image: "/images/tee.webp" },
     { id: "2", name: "Minimalist Black Hoodie", price: 79.99, category: "Apparel", stock: 5, image: "/images/hoodie.jpg" },
     { id: "3", name: "Monochrome Sneakers", price: 129.99, category: "Footwear", stock: 8, image: "/images/sneakers.webp" },
@@ -27,6 +27,16 @@ export const fetchProductById = async (id: string): Promise<Product> => {
         throw new Error("Product not found");
     }
     return product;
+};
+
+export const createProduct = async (data: Omit<Product, 'id'>): Promise<Product> => {
+    await delay(1000);
+    const newProduct: Product = {
+        ...data,
+        id: Math.random().toString(36).substring(2, 9),
+    };
+    MOCK_PRODUCTS.push(newProduct);
+    return newProduct;
 };
 
 export const placeOrder = async (data: { items: any[]; total: number }) => {
