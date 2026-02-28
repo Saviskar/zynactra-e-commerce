@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Product } from "@/lib/validations";
 import { useCart } from "@/store/useCart";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     const addItem = useCart((state) => state.addItem);
 
     return (
-        <div className="group relative flex flex-col gap-2 p-4 transition-subtle hover:bg-muted/50">
+        <Link href={`/products/${product.id}`} className="group relative flex flex-col gap-2 p-4 transition-subtle hover:bg-muted/50">
             <div className="relative aspect-square w-full overflow-hidden rounded-md bg-muted mb-2">
                 {/* Minimalist placeholder for the image */}
                 <div className="h-full w-full flex items-center justify-center text-muted-foreground transition-transform duration-500 group-hover:scale-105">
@@ -41,6 +42,6 @@ export default function ProductCard({ product }: ProductCardProps) {
                     ${product.price.toFixed(2)}
                 </p>
             </div>
-        </div>
+        </Link>
     );
 }
