@@ -9,8 +9,7 @@ import CartDrawer from "@/components/layout/CartDrawer";
 
 export default function Header() {
     const { isAuthenticated, logout } = useAuth();
-    const getTotalItems = useCart((state) => state.getTotalItems);
-    const totalItems = getTotalItems();
+    const cartItemsCount = useCart((state) => state.items.length);
     const [isCartOpen, setIsCartOpen] = useState(false);
 
     return (
@@ -58,9 +57,9 @@ export default function Header() {
                             aria-label="Open cart"
                         >
                             <ShoppingBag className="h-5 w-5" />
-                            {totalItems > 0 && (
+                            {cartItemsCount > 0 && (
                                 <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-foreground text-[10px] font-bold text-background">
-                                    {totalItems}
+                                    {cartItemsCount}
                                 </span>
                             )}
                         </button>
