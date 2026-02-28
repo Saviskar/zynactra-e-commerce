@@ -70,7 +70,7 @@ export default function ProductDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16">
                 {/* Left Column: Image */}
                 <div className="w-full">
-                    <ProductImage category={product.category} />
+                    <ProductImage category={product.category} image={product.image} name={product.name} />
                 </div>
 
                 {/* Right Column: Details */}
