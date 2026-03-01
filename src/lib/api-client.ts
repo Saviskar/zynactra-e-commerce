@@ -1,6 +1,6 @@
 import { Product } from "./validations";
 
-let MOCK_PRODUCTS: Product[] = [
+const INITIAL_PRODUCTS: Product[] = [
     { id: "1", name: "Classic White T-Shirt", price: 29.99, category: "Apparel", stock: 10, image: "/images/tee.webp" },
     { id: "2", name: "Minimalist Black Hoodie", price: 79.99, category: "Apparel", stock: 5, image: "/images/hoodie.jpg" },
     { id: "3", name: "Monochrome Sneakers", price: 129.99, category: "Footwear", stock: 8, image: "/images/sneakers.webp" },
@@ -13,16 +13,37 @@ let MOCK_PRODUCTS: Product[] = [
     { id: "10", name: "Cotton Crew Socks", price: 12.99, category: "Apparel", stock: 25, image: "/images/socks.jpg" },
 ];
 
+const getProducts = (): Product[] => {
+    if (typeof window === "undefined") return INITIAL_PRODUCTS;
+    const stored = localStorage.getItem("demo_products");
+    if (stored) {
+        try {
+            return JSON.parse(stored);
+        } catch (e) {
+            return INITIAL_PRODUCTS;
+        }
+    }
+    localStorage.setItem("demo_products", JSON.stringify(INITIAL_PRODUCTS));
+    return INITIAL_PRODUCTS;
+};
+
+const saveProducts = (products: Product[]) => {
+    if (typeof window !== "undefined") {
+        localStorage.setItem("demo_products", JSON.stringify(products));
+    }
+};
+
 export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 export const fetchProducts = async (): Promise<Product[]> => {
     await delay(1000); // Simulate network latency
-    return MOCK_PRODUCTS;
+    return getProducts();
 };
 
 export const fetchProductById = async (id: string): Promise<Product> => {
     await delay(1000);
-    const product = MOCK_PRODUCTS.find((p) => p.id === id);
+    const products = getProducts();
+    const product = products.find((p) => p.id === id);
     if (!product) {
         throw new Error("Product not found");
     }
@@ -31,12 +52,39 @@ export const fetchProductById = async (id: string): Promise<Product> => {
 
 export const createProduct = async (data: Omit<Product, 'id'>): Promise<Product> => {
     await delay(1000);
+    const products = getProducts();
     const newProduct: Product = {
         ...data,
         id: Math.random().toString(36).substring(2, 9),
     };
-    MOCK_PRODUCTS.push(newProduct);
+    products.push(newProduct);
+    saveProducts(products);
     return newProduct;
+};
+
+export const updateProduct = async (id: string, data: Partial<Product>): Promise<Product> => {
+    await delay(1000);
+    const products = getProducts();
+    const index = products.findIndex((p) => p.id === id);
+    if (index === -1) {
+        throw new Error("Product not found");
+    }
+    const updatedProduct = { ...products[index], ...data };
+    products[index] = updatedProduct;
+    saveProducts(products);
+    return updatedProduct;
+};
+
+export const deleteProduct = async (id: string): Promise<boolean> => {
+    await delay(1000);
+    const products = getProducts();
+    const index = products.findIndex((p) => p.id === id);
+    if (index === -1) {
+        throw new Error("Product not found");
+    }
+    products.splice(index, 1);
+    saveProducts(products);
+    return true;
 };
 
 export const placeOrder = async (data: { items: any[]; total: number }) => {
