@@ -1,17 +1,34 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { fetchProducts } from "@/lib/api-client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchProducts, deleteProduct } from "@/lib/api-client";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Plus, PackageX } from "lucide-react";
+import { Plus, PackageX, Edit, Trash2 } from "lucide-react";
 
 export default function AdminProductsList() {
+    const queryClient = useQueryClient();
+
     const { data: products, isLoading, error } = useQuery({
         queryKey: ["admin-products"],
         queryFn: fetchProducts,
     });
+
+    const deleteMutation = useMutation({
+        mutationFn: async (id: string) => {
+            return deleteProduct(id);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+        },
+    });
+
+    const handleDelete = (id: string) => {
+        if (confirm("Are you sure you want to delete this product?")) {
+            deleteMutation.mutate(id);
+        }
+    };
 
     if (isLoading) {
         return (
@@ -57,17 +74,18 @@ export default function AdminProductsList() {
             </div>
 
             <div className="rounded-lg border bg-white overflow-hidden shadow-sm">
-                <div className="grid grid-cols-[80px_1fr_120px_120px] items-center gap-4 p-4 border-b bg-neutral-50/50 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+                <div className="grid grid-cols-[80px_1fr_120px_120px_80px] items-center gap-4 p-4 border-b bg-neutral-50/50 text-xs font-semibold uppercase tracking-wider text-neutral-500">
                     <div>Image</div>
                     <div>Name</div>
                     <div>Price</div>
                     <div>Stock</div>
+                    <div className="text-right">Actions</div>
                 </div>
                 <div className="divide-y">
                     {products.map((product) => (
                         <div
                             key={product.id}
-                            className="grid grid-cols-[80px_1fr_120px_120px] items-center gap-4 p-4 hover:bg-neutral-50 transition-colors"
+                            className="grid grid-cols-[80px_1fr_120px_120px_80px] items-center gap-4 p-4 hover:bg-neutral-50 transition-colors"
                         >
                             <div className="relative h-14 w-14 rounded-md overflow-hidden bg-neutral-100 border flex items-center justify-center">
                                 {product.image ? (
@@ -89,13 +107,31 @@ export default function AdminProductsList() {
                             </div>
                             <div>
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${(product.stock ?? 0) > 10
-                                        ? "bg-green-100 text-green-800"
-                                        : (product.stock ?? 0) > 0
-                                            ? "bg-yellow-100 text-yellow-800"
-                                            : "bg-red-100 text-red-800"
+                                    ? "bg-green-100 text-green-800"
+                                    : (product.stock ?? 0) > 0
+                                        ? "bg-yellow-100 text-yellow-800"
+                                        : "bg-red-100 text-red-800"
                                     }`}>
                                     {product.stock ?? 0} {product.stock === 1 ? 'item' : 'items'}
                                 </span>
+                            </div>
+                            <div className="flex justify-end gap-1">
+                                <Link href={`/admin/products/${product.id}/edit`}>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-neutral-500 hover:text-neutral-900">
+                                        <Edit className="h-4 w-4" />
+                                        <span className="sr-only">Edit</span>
+                                    </Button>
+                                </Link>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDelete(product.id)}
+                                    disabled={deleteMutation.isPending}
+                                    className="h-8 w-8 text-neutral-500 hover:text-red-600 hover:bg-red-50"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                    <span className="sr-only">Delete</span>
+                                </Button>
                             </div>
                         </div>
                     ))}
