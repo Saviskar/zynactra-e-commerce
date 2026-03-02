@@ -1,4 +1,5 @@
-import { Product } from "./validations";
+import { Product, apiProductSchema } from "./validations";
+import { z } from "zod";
 
 const INITIAL_PRODUCTS: Product[] = [
     { id: "1", name: "Classic White T-Shirt", price: 29.99, category: "Apparel", stock: 10, image: "/images/tee.webp" },
@@ -35,9 +36,32 @@ const saveProducts = (products: Product[]) => {
 
 export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-export const fetchProducts = async (): Promise<Product[]> => {
-    await delay(1000); // Simulate network latency
-    return getProducts();
+export const fetchProducts = async (params?: { search?: string; category?: string }): Promise<Product[]> => {
+    const queryParams = new URLSearchParams();
+    if (params?.search) queryParams.append("search", params.search);
+    if (params?.category && params.category !== "All") queryParams.append("category", params.category);
+
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
+    const response = await fetch(`${API_BASE_URL}/products${queryString}`);
+
+    if (!response.ok) {
+        throw new Error("Failed to fetch products");
+    }
+
+    const responseData = await response.json();
+    const data = responseData.data || responseData;
+
+    const parsed = z.array(apiProductSchema).parse(data);
+
+    return parsed.map((p) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description || "",
+        price: p.unit_price,
+        category: p.category_name || "Uncategorized",
+        stock: p.stock_qty,
+        image: p.image_url || "/images/tee.webp",
+    }));
 };
 
 export const fetchProductById = async (id: string): Promise<Product> => {
