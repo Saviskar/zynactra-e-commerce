@@ -12,7 +12,7 @@ export default function AdminProductsList() {
 
     const { data: products, isLoading, error } = useQuery({
         queryKey: ["admin-products"],
-        queryFn: fetchProducts,
+        queryFn: () => fetchProducts(),
     });
 
     const deleteMutation = useMutation({

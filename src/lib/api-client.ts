@@ -114,7 +114,7 @@ export const deleteProduct = async (id: string): Promise<boolean> => {
 export const placeOrder = async (data: { items: any[]; total: number; token: string }) => {
     const payload = {
         items: data.items.map(item => ({
-            product_id: parseInt(item.product.id),
+            product_id: item.product.id,
             quantity: item.quantity
         }))
     };
@@ -142,7 +142,7 @@ export const placeOrder = async (data: { items: any[]; total: number; token: str
     return response.json();
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 export const registerUser = async (data: any) => {
     const payload = {
