@@ -14,7 +14,7 @@ export const useRegister = () => {
             // Provide a fallback in case backend only returns token but not the user details properly
             const userResponse = data.user || { email: variables.email, fullName: variables.fullName };
             // Set the full name from the variables since backend might drop it
-            login({ fullName: variables.fullName, email: userResponse.email || variables.email });
+            login({ fullName: variables.fullName, email: userResponse.email || variables.email }, data.token);
             router.push("/");
         },
     });

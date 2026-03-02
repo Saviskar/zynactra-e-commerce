@@ -1,19 +1,26 @@
 "use client";
 
 import { useCart } from "@/store/useCart";
+import { useAuth } from "@/store/useAuth";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
 import { placeOrder } from "@/lib/api-client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { CheckCircle2, Loader2, ArrowLeft } from "lucide-react";
 
 export default function CheckoutPage() {
     const { items, getTotalPrice, clearCart } = useCart();
+    const { isAuthenticated, token } = useAuth();
     const router = useRouter();
     const [isSuccess, setIsSuccess] = useState(false);
     const [orderId, setOrderId] = useState("");
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const subtotal = getTotalPrice();
     const shipping = items.length > 0 ? 10.0 : 0;
@@ -23,7 +30,7 @@ export default function CheckoutPage() {
         mutationFn: placeOrder,
         onSuccess: (data) => {
             setIsSuccess(true);
-            setOrderId(data.orderId);
+            setOrderId(data.orderId || data.order?.id || "N/A");
             clearCart();
         },
     });
@@ -46,6 +53,10 @@ export default function CheckoutPage() {
                 </div>
             </div>
         );
+    }
+
+    if (!mounted) {
+        return <div className="min-h-[calc(100vh-4rem)] bg-background" />;
     }
 
     return (
@@ -112,21 +123,32 @@ export default function CheckoutPage() {
                             </div>
                         )}
 
-                        <Button
-                            className="w-full"
-                            size="lg"
-                            disabled={items.length === 0 || mutation.isPending}
-                            onClick={() => mutation.mutate({ items, total })}
-                        >
-                            {mutation.isPending ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Processing Order...
-                                </>
-                            ) : (
-                                "Place Order"
-                            )}
-                        </Button>
+                        {isAuthenticated && token ? (
+                            <Button
+                                className="w-full"
+                                size="lg"
+                                disabled={items.length === 0 || mutation.isPending}
+                                onClick={() => mutation.mutate({ items, total, token })}
+                            >
+                                {mutation.isPending ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Processing Order...
+                                    </>
+                                ) : (
+                                    "Place Order"
+                                )}
+                            </Button>
+                        ) : (
+                            <Button
+                                className="w-full"
+                                size="lg"
+                                variant="outline"
+                                onClick={() => router.push("/auth/login?redirect=/checkout")}
+                            >
+                                Login to Complete Purchase
+                            </Button>
+                        )}
                     </div>
                 </div>
             </div>

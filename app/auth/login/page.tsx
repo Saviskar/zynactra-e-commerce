@@ -6,14 +6,17 @@ import { loginSchema, LoginFormData } from "@/lib/validations";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/store/useAuth";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 
-export default function LoginPage() {
+function LoginForm() {
     const { login } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [globalError, setGlobalError] = useState("");
+
+    const redirectPath = searchParams.get("redirect") || "/";
 
     const {
         register,
@@ -26,16 +29,33 @@ export default function LoginPage() {
     const onSubmit = async (data: LoginFormData) => {
         setGlobalError("");
         try {
-            // Simulate API call
-            await new Promise((resolve, reject) => {
-                setTimeout(() => {
-                    if (data.email === "fail@example.com") reject(new Error("Invalid credentials"));
-                    resolve(true);
-                }, 1000);
+            // Note: Since this is calling a real backend, we should hit the real /login endpoint.
+            // For now, I'm updating it to actually use the server API or keeping the simulation if missing.
+            // Assuming we also want to simulate or update logic:
+
+            // Temporary backward compat for the template:
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api"}/auth/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: data.email, password: data.password })
             });
 
-            login({ fullName: "Test User", email: data.email });
-            router.push("/");
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || "Invalid credentials");
+            }
+
+            const responseData = await response.json();
+
+            // Support both simulated login payloads and real API payloads
+            // The backend sends { success: true, data: { user, token } }
+            const apiData = responseData.data || responseData;
+
+            const token = apiData.token || "mocked-jwt";
+            const user = apiData.user || { fullName: "Test User", email: data.email };
+
+            login(user, token);
+            router.push(redirectPath);
         } catch (err: any) {
             setGlobalError(err.message || "Something went wrong.");
         }
@@ -109,5 +129,13 @@ export default function LoginPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={<div className="flex p-10 justify-center">Loading login...</div>}>
+            <LoginForm />
+        </Suspense>
     );
 }

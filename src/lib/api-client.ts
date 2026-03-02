@@ -87,12 +87,35 @@ export const deleteProduct = async (id: string): Promise<boolean> => {
     return true;
 };
 
-export const placeOrder = async (data: { items: any[]; total: number }) => {
-    await delay(2000); // Simulate processing payment
-    if (Math.random() < 0.1) {
-        throw new Error("Payment failed. Please try again.");
+export const placeOrder = async (data: { items: any[]; total: number; token: string }) => {
+    const payload = {
+        items: data.items.map(item => ({
+            product_id: parseInt(item.product.id),
+            quantity: item.quantity
+        }))
+    };
+
+    const response = await fetch(`${API_BASE_URL}/orders/checkout`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${data.token}`
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        let errorMessage = "Checkout failed";
+        try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+            // failed to parse json
+        }
+        throw new Error(errorMessage);
     }
-    return { success: true, orderId: `ORD-${Math.floor(Math.random() * 10000)}` };
+
+    return response.json();
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
@@ -121,5 +144,6 @@ export const registerUser = async (data: any) => {
         throw new Error(errorMessage);
     }
 
-    return response.json();
+    const responseData = await response.json();
+    return responseData.data || responseData;
 };
