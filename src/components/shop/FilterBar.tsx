@@ -33,14 +33,6 @@ export default function FilterBar({
             </div>
 
             <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
-                <Button
-                    variant={category === "All" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => onCategoryChange("All")}
-                    className="rounded-full"
-                >
-                    All
-                </Button>
                 {categories.map((c) => (
                     <Button
                         key={c}
