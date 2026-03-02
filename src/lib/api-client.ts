@@ -1,4 +1,5 @@
-import { Product } from "./validations";
+import { Product, apiProductSchema } from "./validations";
+import { z } from "zod";
 
 const INITIAL_PRODUCTS: Product[] = [
     { id: "1", name: "Classic White T-Shirt", price: 29.99, category: "Apparel", stock: 10, image: "/images/tee.webp" },
@@ -35,9 +36,32 @@ const saveProducts = (products: Product[]) => {
 
 export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-export const fetchProducts = async (): Promise<Product[]> => {
-    await delay(1000); // Simulate network latency
-    return getProducts();
+export const fetchProducts = async (params?: { search?: string; category?: string }): Promise<Product[]> => {
+    const queryParams = new URLSearchParams();
+    if (params?.search) queryParams.append("search", params.search);
+    if (params?.category && params.category !== "All") queryParams.append("category", params.category);
+
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
+    const response = await fetch(`${API_BASE_URL}/products${queryString}`);
+
+    if (!response.ok) {
+        throw new Error("Failed to fetch products");
+    }
+
+    const responseData = await response.json();
+    const data = responseData.data || responseData;
+
+    const parsed = z.array(apiProductSchema).parse(data);
+
+    return parsed.map((p) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description || "",
+        price: p.unit_price,
+        category: p.category_name || "Uncategorized",
+        stock: p.stock_qty,
+        image: p.image_url || "/images/tee.webp",
+    }));
 };
 
 export const fetchProductById = async (id: string): Promise<Product> => {
@@ -87,15 +111,38 @@ export const deleteProduct = async (id: string): Promise<boolean> => {
     return true;
 };
 
-export const placeOrder = async (data: { items: any[]; total: number }) => {
-    await delay(2000); // Simulate processing payment
-    if (Math.random() < 0.1) {
-        throw new Error("Payment failed. Please try again.");
+export const placeOrder = async (data: { items: any[]; total: number; token: string }) => {
+    const payload = {
+        items: data.items.map(item => ({
+            product_id: item.product.id,
+            quantity: item.quantity
+        }))
+    };
+
+    const response = await fetch(`${API_BASE_URL}/orders/checkout`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${data.token}`
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        let errorMessage = "Checkout failed";
+        try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+            // failed to parse json
+        }
+        throw new Error(errorMessage);
     }
-    return { success: true, orderId: `ORD-${Math.floor(Math.random() * 10000)}` };
+
+    return response.json();
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 export const registerUser = async (data: any) => {
     const payload = {
@@ -121,5 +168,6 @@ export const registerUser = async (data: any) => {
         throw new Error(errorMessage);
     }
 
-    return response.json();
+    const responseData = await response.json();
+    return responseData.data || responseData;
 };

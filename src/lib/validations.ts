@@ -35,6 +35,16 @@ export const productSchema = z.object({
   stock: z.number().optional(),
 });
 
+export const apiProductSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable().optional(),
+  unit_price: z.union([z.number(), z.string()]).transform((val) => Number(val)),
+  stock_qty: z.number(),
+  category_name: z.string().nullable().optional(),
+  image_url: z.string().nullable().optional(),
+});
+
 export type Product = z.infer<typeof productSchema>;
 
 export const createProductSchema = productSchema.omit({ id: true });
